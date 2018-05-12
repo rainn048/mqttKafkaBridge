@@ -8,19 +8,16 @@ import org.eclipse.paho.client.mqttv3.logging.LoggerFactory;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 public class MqttRec{
-	//MqttAsyncClient 	client;
-	MqttClient client;
-	String 				brokerUrl;
+
+	private MqttClient client;
+	private String 				brokerUrl;
 	private MqttConnectOptions 	conOpt;
 	private boolean 			clean;
-	Throwable 			ex = null;
-	Object 				waiter = new Object();
-	boolean 			donext = false;
 	private String password;
 	private String userName;
 
 	private static final String CLASS_NAME = MqttRec.class.getName();
-	private static final Logger log = LoggerFactory.getLogger(LoggerFactory.MQTT_CLIENT_MSG_CAT, CLASS_NAME);
+	private static final Logger logger = LoggerFactory.getLogger(LoggerFactory.MQTT_CLIENT_MSG_CAT, CLASS_NAME);
 	
 	
 	public static void main(String[] args) {
@@ -30,9 +27,9 @@ public class MqttRec{
 		String protocol = "tcp://";
 		String clientId 	= MqttClient.generateClientId ();
 		String topic 		= "lee";
-		String password = "dsd";
-		String userName = "sdf";
-		boolean cleanSession = true;			// Non durable subscriptions
+		String password = null;
+		String userName = null;
+		boolean cleanSession = false;		// Non durable subscriptions
 		int qos 			= 1;
 		
 		System.setProperty("java.util.logging.config.file", "D:\\workspace\\sino\\sino\\jsr47min.properties");
@@ -41,7 +38,6 @@ public class MqttRec{
 		//System.setProperty("java.util.logging.config.file", "./jsr47min.properties");
         //System.setProperty("user.home", "./log");
           
-        log.fine("MqttRec", "main", "3");
         
 		String url = protocol + broker + ":" + port;
 		
@@ -51,14 +47,14 @@ public class MqttRec{
 			cli.subscribe(topic,qos);
 		
 		}catch(MqttException me) {
-			System.out.println("reason "+me.getReasonCode());
-			System.out.println("msg "+me.getMessage());
-			System.out.println("loc "+me.getLocalizedMessage());
-			System.out.println("cause "+me.getCause());
-			System.out.println("excep "+me);
+			logger.severe("MqttRec","main","reason: "+me.getReasonCode());
+			logger.severe("MqttRec","main","msg: "+me.getMessage());
+			logger.severe("MqttRec","main","loc: "+me.getLocalizedMessage());
+			logger.severe("MqttRec","main","cause: "+me.getCause());
+			logger.severe("MqttRec","main","excep: "+me);
 			me.printStackTrace();
 		} catch (Throwable th) {
-			System.out.println("Throwable caught "+th);
+			logger.severe("MqttRec","main","Throwable caught "+th);
 			th.printStackTrace();
 		}
 		
@@ -67,21 +63,13 @@ public class MqttRec{
 	
 	
 	
-	public void subscribe(String topicName, int qos) throws Throwable {
-
-
-		client.connect(conOpt);
-
-    	//log.info("MqttRec","subscribe","Connected to "+brokerUrl+" with client ID "+client.getClientId());
-    	System.out.println("connect!");
-    	client.subscribe(topicName, qos);
-    	System.out.println("connected!");
-    	//log.info("MqttRec","subscribe","Subscribing to topic \""+topicName+"\" qos "+qos);
-
-	}
-	
-	
-	
+	/**
+	 * @param brokerUrl
+	 * @param clientId
+	 * @param cleanSession
+	 * @param userName
+	 * @param password
+	 */
 	public MqttRec(String brokerUrl, String clientId, boolean cleanSession,
     		String userName, String password) {
 		
@@ -91,7 +79,7 @@ public class MqttRec{
     	this.userName = userName;
 		
 
-		log.info("MqttRec", "Init", "asddsasd");
+		logger.info("MqttRec", "Init", "MqttRec Init...");
 		
 		MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence();
 		
@@ -106,16 +94,33 @@ public class MqttRec{
 			if(null != userName) {
 				conOpt.setUserName(this.userName);
 			}
-			//client = new MqttAsyncClient(this.brokerUrl,clientId, dataStore);
+
 			client = new MqttClient(this.brokerUrl,clientId, dataStore);
 			
 			client.setCallback(new RecCallBack(client));
-			
-			
+
 		}catch(MqttException e) {
+			logger.severe("MqttRec", "MqttRec", e.getMessage());
 			e.printStackTrace();
 			System.exit(1);
 		}
 	}
+	
+	
+	
+	
+	
+	/**
+	 * @param topicName
+	 * @param qos
+	 * @throws Throwable
+	 */
+	public void subscribe(String topicName, int qos) throws Throwable {
+		client.connect(conOpt);
+    	logger.info("MqttRec","subscribe","Connected to "+brokerUrl+" with client ID "+client.getClientId());
+    	client.subscribe(topicName, qos);
+    	logger.info("MqttRec","subscribe","Subscribing to topic \""+topicName+"\" qos "+qos);
+	}
+	
 
 }
